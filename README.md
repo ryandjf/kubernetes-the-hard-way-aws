@@ -78,7 +78,7 @@ aws ec2 modify-vpc-attribute \
 ### DHCP Option Sets
 
 ```sh
-AWS_REGION=us-east-2
+AWS_REGION=cn-north-1
 ```
 
 ```sh
@@ -212,7 +212,7 @@ KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
 ### Instance Image
 
 ```sh
-IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
+IMAGE_ID=$(aws ec2 describe-images \
   --filters \
   'Name=root-device-type,Values=ebs' \
   'Name=architecture,Values=x86_64' \
@@ -234,8 +234,6 @@ chmod 600 ssh/kubernetes.id_rsa
 
 ### Kubernetes Controllers
 
-Using `t2.micro` instead of `t2.small` as `t2.micro` is covered by AWS free tier
-
 ```sh
 for i in 0 1 2; do
   instance_id=$(aws ec2 run-instances \
@@ -244,7 +242,7 @@ for i in 0 1 2; do
     --count 1 \
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --instance-type t2.micro \
+    --instance-type t2.medium \
     --private-ip-address 10.240.0.1${i} \
     --user-data "name=controller-${i}" \
     --subnet-id ${SUBNET_ID} \
@@ -268,7 +266,7 @@ for i in 0 1 2; do
     --count 1 \
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --instance-type t2.micro \
+    --instance-type t2.medium \
     --private-ip-address 10.240.0.2${i} \
     --user-data "name=worker-${i}|pod-cidr=10.200.${i}.0/24" \
     --subnet-id ${SUBNET_ID} \
@@ -513,24 +511,24 @@ mkdir -p cfg
 for i in 0 1 2; do
   instance="worker-${i}"
   instance_hostname="ip-10-240-0-2${i}"
-  bin/kubectl config set-cluster kubernetes-the-hard-way \
+  kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=tls/ca.pem \
     --embed-certs=true \
     --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
     --kubeconfig=cfg/${instance}.kubeconfig
 
-  bin/kubectl config set-credentials system:node:${instance_hostname} \
+  kubectl config set-credentials system:node:${instance_hostname} \
     --client-certificate=tls/${instance}.pem \
     --client-key=tls/${instance}-key.pem \
     --embed-certs=true \
     --kubeconfig=cfg/${instance}.kubeconfig
 
-  bin/kubectl config set-context default \
+  kubectl config set-context default \
     --cluster=kubernetes-the-hard-way \
     --user=system:node:${instance_hostname} \
     --kubeconfig=cfg/${instance}.kubeconfig
 
-  bin/kubectl config use-context default \
+  kubectl config use-context default \
     --kubeconfig=cfg/${instance}.kubeconfig
 done
 ```
@@ -538,21 +536,21 @@ done
 ### The kube-proxy Kubernetes Configuration File
 
 ```sh
-bin/kubectl config set-cluster kubernetes-the-hard-way \
+kubectl config set-cluster kubernetes-the-hard-way \
   --certificate-authority=tls/ca.pem \
   --embed-certs=true \
   --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
   --kubeconfig=cfg/kube-proxy.kubeconfig
-bin/kubectl config set-credentials kube-proxy \
+kubectl config set-credentials kube-proxy \
   --client-certificate=tls/kube-proxy.pem \
   --client-key=tls/kube-proxy-key.pem \
   --embed-certs=true \
   --kubeconfig=cfg/kube-proxy.kubeconfig
-bin/kubectl config set-context default \
+kubectl config set-context default \
   --cluster=kubernetes-the-hard-way \
   --user=kube-proxy \
   --kubeconfig=cfg/kube-proxy.kubeconfig
-bin/kubectl config use-context default \
+kubectl config use-context default \
   --kubeconfig=cfg/kube-proxy.kubeconfig
 ```
 
@@ -625,6 +623,8 @@ Execute on each controller:
 ```sh
 wget -q --show-progress --https-only --timestamping \
   "https://github.com/coreos/etcd/releases/download/v3.2.11/etcd-v3.2.11-linux-amd64.tar.gz"
+
+
 tar -xvf etcd-v3.2.11-linux-amd64.tar.gz
 sudo mv etcd-v3.2.11-linux-amd64/etcd* /usr/local/bin/
 sudo mkdir -p /etc/etcd /var/lib/etcd
@@ -703,6 +703,8 @@ wget -q --show-progress --https-only --timestamping \
   "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-controller-manager" \
   "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-scheduler" \
   "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kubectl"
+
+
 chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
 sudo mv kube-apiserver kube-controller-manager kube-scheduler kubectl /usr/local/bin/
 sudo mkdir -p /var/lib/kubernetes/
@@ -884,6 +886,8 @@ wget -q --show-progress --https-only --timestamping \
   https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kubectl \
   https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-proxy \
   https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kubelet
+
+
 sudo mkdir -p \
   /etc/cni/net.d \
   /opt/cni/bin \
@@ -1010,17 +1014,17 @@ sudo systemctl start containerd cri-containerd kubelet kube-proxy
 ## The Admin Kubernetes Configuration File
 
 ```sh
-bin/kubectl config set-cluster kubernetes-the-hard-way \
+kubectl config set-cluster kubernetes-the-hard-way \
   --certificate-authority=tls/ca.pem \
   --embed-certs=true \
   --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443
-bin/kubectl config set-credentials admin \
+kubectl config set-credentials admin \
   --client-certificate=tls/admin.pem \
   --client-key=tls/admin-key.pem
-bin/kubectl config set-context kubernetes-the-hard-way \
+kubectl config set-context kubernetes-the-hard-way \
   --cluster=kubernetes-the-hard-way \
   --user=admin
-bin/kubectl config use-context kubernetes-the-hard-way
+kubectl config use-context kubernetes-the-hard-way
 ```
 
 ## Verification
