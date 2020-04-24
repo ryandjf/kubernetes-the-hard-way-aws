@@ -472,7 +472,7 @@ for instance in worker-0 worker-1 worker-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
-  scp -i ssh/kubernetes.id_rsa \
+  scp -i ssh/kubernetes.id_rsa -o "StrictHostKeyChecking no" \
     tls/ca.pem tls/${instance}-key.pem tls/${instance}.pem \
     ubuntu@${external_ip}:~/
 done
@@ -483,7 +483,7 @@ for instance in controller-0 controller-1 controller-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
-  scp -i ssh/kubernetes.id_rsa \
+  scp -i ssh/kubernetes.id_rsa -o "StrictHostKeyChecking no" \
     tls/ca.pem tls/ca-key.pem tls/kubernetes-key.pem tls/kubernetes.pem \
     ubuntu@${external_ip}:~/
 done
@@ -561,7 +561,7 @@ for instance in worker-0 worker-1 worker-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
-  scp -i ssh/kubernetes.id_rsa \
+  scp -i ssh/kubernetes.id_rsa -o "StrictHostKeyChecking no" \
     cfg/${instance}.kubeconfig cfg/kube-proxy.kubeconfig \
     ubuntu@${external_ip}:~/
 done
@@ -600,7 +600,7 @@ for instance in controller-0 controller-1 controller-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
-  scp -i ssh/kubernetes.id_rsa cfg/encryption-config.yaml ubuntu@${external_ip}:~/
+  scp -i ssh/kubernetes.id_rsa -o "StrictHostKeyChecking no" cfg/encryption-config.yaml ubuntu@${external_ip}:~/
 done
 ```
 
@@ -615,7 +615,7 @@ accordingly):
 external_ip=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=controller-N" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
-ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
+ssh -i ssh/kubernetes.id_rsa -o "StrictHostKeyChecking no" ubuntu@${external_ip}
 ```
 
 Execute on each controller:
